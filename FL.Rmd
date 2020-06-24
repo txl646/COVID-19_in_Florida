@@ -1,0 +1,92 @@
+---
+title: "TianHao"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: fill
+    source_code: https://github.com/txl646/COVID-19_in_Florida
+date: "`r Sys.Date()`"
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+
+# import data for local (update at 2020-06-23)
+fl <- read.csv(".\\data\\us-counties.csv") %>% 
+  filter(state %in% c("Florida", "FL")) %>% 
+  mutate(date = as.Date.character(date))
+
+# # or from internet, by using
+# read.csv(url("https://github.com/nytimes/covid-19-data/blob/master/us-counties.csv"))
+
+# cumlative cases dataset
+cl <- fl %>% 
+  group_by(date) %>% 
+  summarise(cases = sum(cases),
+            deaths = sum(deaths))
+```
+
+Analysis
+=======================================================================
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Total Confirmed Positive
+
+```{r}
+positive <- max(cl$cases)
+valueBox(positive, icon = "fa-user", color = "#f6b409")
+```
+
+### Total Confirmed Deaths
+
+```{r}
+death <- max(cl$deaths)
+valueBox(death, icon = "fa-angry", color = "#0095a3")
+```
+
+### County with the Highest # of Cases & Deaths
+
+```{r}
+ct <- fl %>% 
+  filter(date == max(date)) %>% 
+  filter(cases == max(cases))
+
+highest <- ct$county
+valueBox(highest, icon = "fa-angle-double-up", color = "#00dcf0")
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Rate of Cases since March 1
+
+```{r}
+cl %>% ggplot(aes(x = date, y = cases, group = 1)) +
+  geom_line(color = "blue") +  
+  labs(x = "Days since March 1", 
+       y = "Cases") +
+  scale_x_date() +
+  theme_bw()
+```
+
+### What are the Symptoms?
+
+```{r}
+knitr::include_graphics("symptoms.jpg")
+```
+
+
+Raw Data
+=======================================================================
+
+### Data Table of Raw Data
+
+```{r}
+DT::datatable(fl, options = list(
+  pageLength = 25
+))
+```
